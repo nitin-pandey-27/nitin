@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Need to run this script as a root user
+# This script should run from the directory which contains the zip file of the database.
+# Can download the zip file from http://www.oracle.com/technetwork/database/database-technologies/express-edition/index.html
+# May need to edit this script as per the name of the latest downloaded file.
+# Must have to provide the oracle password.
+
+unzip -o oracle-xe-11.2.0-1.0.x86_64.rpm.zip # use it with care otherwise it will overwrite the existing file
+
+cd Disk1
+
+sudo mkdir xe_logs # for the log file of silent installation
+
+cd xe_logs
+
+sudo touch XEsilentinstall.log
+
+cd ../
+
+sudo rpm -ivh oracle-xe-11.2.0-1.0.x86_64.rpm > xe_logs/XEsilentinstall.log
+
+cd response
+
+echo "Need to edit this file for installing the DB"
+
+sudo vi xe.rsp 
+
+cd ..
+
+sudo /etc/init.d/oracle-xe configure responseFile=response/xe.rsp  >>  xe_logs/XEsilentinstall.log
+
+# Need to set the environment variable
+
+sudo /etc/init.d/oracle-xe stop #Stop the database
+
+#su - oracle # Switch the user
+
+#bash
+
+cd /u01/app/oracle/product/11.2.0/xe/bin
+
+. ./oracle_env.sh  #Set the environment variable
+
+echo . /u01/app/oracle/product/11.2.0/xe/bin/oracle_env.sh >> ~/.bash_profile
+
+sudo /etc/init.d/oracle-xe start
+
+
