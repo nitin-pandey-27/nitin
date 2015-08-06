@@ -1,0 +1,432 @@
+#BACULA INSTALLATION
+
+http://www.server-world.info/en/note?os=CentOS_6&p=mysql
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula&f=2
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula&f=3
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula&f=4
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula&f=5
+http://www.server-world.info/en/note?os=CentOS_6&p=bacula&f=6
+
+# CONF FILES bacula-dir.conf 
+
+#
+# Default Bacula Director Configuration file
+#
+#  For Bacula release 1.38.11 (28 June 2006) -- redhat Enterprise release
+#
+
+#********************************************************************
+#************ DIRECTOR SETTINGS *************************************
+#********************************************************************
+
+Director {                            # define myself
+  Name = bacula-dir
+  DIRport = 9101                # where we listen for UA connections
+  QueryFile = "/usr/libexec/bacula/query.sql"
+  WorkingDirectory = "/var/spool/bacula"
+  PidDirectory = "/var/run"
+  Maximum Concurrent Jobs = 3
+  Password = "xxxx"         # Console password
+  Messages = Daemon
+}
+
+
+
+
+#********************************************************************
+#************ SCHEDULES *********************************************
+#********************************************************************
+
+Schedule {
+  Name = "WeeklySchedule"
+  Run = Full 1st sun at 06:00
+ # Run = Differential 2nd-5th sun at 23:05
+  Run = Incremental mon-sat at 06:00
+  Run = Incremental 2nd-5th sun at 06:00
+}
+
+
+#************ FILESETS **********************************************
+#********************************************************************
+
+FileSet {
+  Name = "FullSet"
+  Include {
+    Options {
+      signature = MD5
+      Compression = GZIP
+    }
+#
+#  Put your list of files here, preceded by 'File =', one per line
+#    or include an external list with:
+#
+#    File = <file-name
+#
+#  Note: / backs up everything on the root partition.
+#    if you have other partitions such as /usr or /home
+#    you will probably want to add them too.
+#
+#  By default this is defined to point to the Bacula binary
+#    directory to give a reasonable FileSet to backup to
+#    disk storage during initial testing.
+#
+    File = /opt/mms
+    File = /etc/httpd
+    File = /var/log/httpd
+    File = /usr/lib64/httpd/modules
+    File = /var/run/httpd
+  }
+
+#
+# If you backup the root directory, the following two excluded
+#   files can be useful
+#
+  Exclude {
+    File = /var/spool/bacula
+    File = /tmp
+    File = /proc
+    File = /tmp
+    File = /.journal
+    File = /.fsck
+  }
+}
+
+
+#********************************************************************
+#************ Job Definitions ***************************************
+#********************************************************************
+
+
+
+Job {
+  Name = "OTPRWEB01"
+  Type = Backup
+  Level = Full
+  Client = OTPRWEB01
+  FileSet= "FullSet"
+  Messages = Standard
+  Storage = File1
+  Pool = client1
+  Schedule = "WeeklySchedule"
+}
+
+Job {
+  Name = "OTPRWEB02"
+  Type = Backup
+  Level = Full
+  Client = OTPRWEB02
+  FileSet= "FullSet"
+  Messages = Standard
+  Storage = File2
+  Pool = client2
+  Schedule = "WeeklySchedule"
+}
+
+Job {
+  Name = "OTPRAPP01"
+  Type = Backup
+  Level = Full
+  Client = OTPRAPP01
+  FileSet= "FullSet"
+  Messages = Standard
+  Storage = File3
+  Pool = client3
+  Schedule = "WeeklySchedule"
+}
+
+Job {
+  Name = "OTPRAPP02"
+  Type = Backup
+  Level = Full
+  Client = OTPRAPP02
+  FileSet= "FullSet"
+  Messages = Standard
+  Storage = File4
+  Pool = client4
+  Schedule = "WeeklySchedule"
+}
+
+
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client = "OTPRWEB01" "OTPRWEB02" "OTPRAPP01" "OTPRAPP02"
+  FileSet = "FullSet"                  
+  Storage = "File1" "File2" "File3" "File4"
+  Pool = Default
+  Messages = Standard
+  Where = /tmp/bacula-restores
+}
+
+
+#********************************************************************
+#************ CLIENT  DEFINITIONS ***********************************
+#********************************************************************
+Client {
+  Name = OTPRWEB01
+  Address = x.x.x.x
+  Catalog = BackupDB
+  Password = xxxx
+  File Retention = 20 days
+}
+Client {
+  Name = OTPRWEB02
+  Address = x.x.x.x
+  Catalog = BackupDB
+  Password = xxxx
+  File Retention = 20 days
+}
+
+Client {
+  Name = OTPRAPP01
+  Address = x.x.x.x
+  Catalog = BackupDB
+  Password = xxxxx
+  File Retention = 20 days
+}
+
+Client {
+  Name = OTPRAPP02
+  Address = x.x.x.x
+  Catalog = BackupDB
+  Password = xxxxx
+  File Retention = 20 days
+}
+
+#********************************************************************
+#************ STORAGE DEFINITIONS ***********************************
+#********************************************************************
+
+Storage {
+  Name = File1
+  Address = x.x.x.x
+  Password = xxxx
+  Device = client1
+  Media Type = File1
+}
+Storage {
+  Name = File2
+  Address = x.x.x.x
+  Password = xxxxx
+  Device = client2
+  Media Type = File2
+}
+Storage {
+  Name = File3
+  Address = x.x.x.x
+  Password = xxxx
+  Device = client3
+  Media Type = File3
+}
+Storage {
+  Name = File4
+  Address = x.x.x.x
+  Password = xxxx
+  Device = client4
+  Media Type = File4
+}
+
+
+
+
+#********************************************************************
+#************ Other Config Settings *********************************
+#********************************************************************
+
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+# Uncomment the following line if you want the dbi driver
+# dbdriver = "dbi:sqlite3"; dbaddress = 127.0.0.1; dbport =
+  dbname = "bacula"; dbuser = "bacula"; dbpassword = "xxxxxx"
+}
+Catalog {
+  Name = BackupDB
+# Uncomment the following line if you want the dbi driver
+# dbdriver = "dbi:sqlite3"; dbaddress = 127.0.0.1; dbport =  
+  dbname = "bacula"; dbuser = "bacula"; dbpassword = "xxxxxx"
+}
+
+
+#********************************************************************
+#*******************POOL   Settings *********************************
+#********************************************************************
+
+Pool {
+  Name = client1
+  Use Volume Once = yes
+  Pool Type = Backup
+  LabelFormat = "OTPRWEB01-"
+  AutoPrune = yes
+  VolumeRetention = 13d
+  Maximum Volumes = 15
+  Recycle = yes
+}
+# Cycle through 8 Volumes (1 week)
+Pool {
+  Name = client2
+  Use Volume Once = yes
+  Pool Type = Backup
+  LabelFormat = "OTPRWEB02-"
+  AutoPrune = yes
+  VolumeRetention = 13d
+  Maximum Volumes = 15
+  Recycle = yes
+}
+
+Pool {
+  Name = client3
+  Use Volume Once = yes
+  Pool Type = Backup
+  LabelFormat = "OTPRAPP01-"
+  AutoPrune = yes
+  VolumeRetention = 13d
+  Maximum Volumes = 15
+  Recycle = yes
+}
+
+Pool {
+  Name = client4
+  Use Volume Once = yes
+  Pool Type = Backup
+  LabelFormat = "OTPRAPP02-"
+  AutoPrune = yes
+  VolumeRetention = 13d
+  Maximum Volumes = 15
+  Recycle = yes
+}
+
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 180 days         # one year
+  Maximum Volume Jobs = 1
+  Label Format = Vol-
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+#
+# NOTE! If you send to two email or more email addresses, you will need
+#  to replace the %r in the from field (-f part) with a single valid
+#  email address in both the mailcommand and the operatorcommand.
+#
+  mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) %r\" -s \"Bacula: %t %e of %c %l\" %r"
+  operatorcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) %r\" -s \"Bacula: Intervention needed for %j\" %r"
+  mail = backup-admin@moremagic.com = all, !skipped            
+  operator = backup-admin@moremagic.com = mount
+  console = all, !skipped, !saved
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if they scroll off the console.
+#
+  append = "/var/spool/bacula/log" = all, !skipped
+}
+
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) %r\" -s \"Bacula daemon message\" %r"
+  mail = backup-admin@moremagic.com = all, !skipped            
+  console = all, !skipped, !saved
+  append = "/var/spool/bacula/log" = all, !skipped
+}
+
+
+
+
+
+
+=============bacula-sd.conf
+
+#
+# Default Bacula Storage Daemon Configuration file
+#
+#  For Bacula release 5.0.0 (26 January 2010) -- redhat 
+#
+# You may need to change the name of your tape drive
+#   on the "Archive Device" directive in the Device
+#   resource.  If you change the Name and/or the 
+#   "Media Type" in the Device resource, please ensure
+#   that dird.conf has corresponding changes.
+#
+
+Storage {                             # definition of myself
+  Name = bacula-sd
+  SDPort = 9103                  # Director's port      
+  WorkingDirectory = "/var/spool/bacula"
+  Pid Directory = "/var/run"
+  Maximum Concurrent Jobs = 20
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = bacula-dir
+  Password = "xxxxxx"
+}
+
+
+#
+# Devices supported by this Storage daemon
+# To connect, the Director's bacula-dir.conf must have the
+#  same Name and MediaType. 
+#
+
+Device {
+  Name = client1
+  Media Type = File1
+  Archive Device = /root/bacula-backup/OTPRWEB01
+  LabelMedia = yes;
+  Random Access = Yes;
+  AutomaticMount = yes;
+  RemovableMedia = no;
+  AlwaysOpen = no;
+}
+# Archive directory for Client2
+Device {
+  Name = client2
+  Media Type = File2
+  Archive Device = /root/bacula-backup/OTPRWEB02
+  LabelMedia = yes;
+  Random Access = Yes;
+  AutomaticMount = yes;
+  RemovableMedia = no;
+  AlwaysOpen = no;
+}
+
+Device {
+  Name = client3
+  Media Type = File3
+  Archive Device = /root/bacula-backup/OTPRAPP01
+  LabelMedia = yes;
+  Random Access = Yes;
+  AutomaticMount = yes;
+  RemovableMedia = no;
+  AlwaysOpen = no;
+}
+
+Device {
+  Name = client4
+  Media Type = File4
+  Archive Device = /root/bacula-backup/OTPRAPP02
+  LabelMedia = yes;
+  Random Access = Yes;
+  AutomaticMount = yes;
+  RemovableMedia = no;
+  AlwaysOpen = no;
+}
+
+Messages {
+  Name = Standard
+  director = bacula-dir = all
+}
