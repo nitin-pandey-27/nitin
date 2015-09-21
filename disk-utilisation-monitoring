@@ -1,0 +1,17 @@
+#!/bin/sh
+fs=`mount|egrep '^/dev'|grep -iv cdrom| awk '{print $3}'`
+typeset -i thresh="75"
+typeset -i warn="90"
+for i in $fs
+do
+    skip=0
+    typeset -i used=`df -k $i|tail -1|awk '{print $5}'|cut -d "%" -f 1`
+    if [ "$used" -ge "$warn" ]; then
+        echo "CRITICAL: filesystem $i is $used% full"
+mutt  -s "Critical Disk Utilization" <email-id>  < /root/space.txt
+    fi
+    if [ "$used" -ge "$thresh" -a "$used" -le "$warn" ]; then
+        echo "WARNING: filesystem $i is $used %full"
+mutt  -s "Warning Disk Utilization" <email-id>  < /root/space.txt
+    fi
+done
