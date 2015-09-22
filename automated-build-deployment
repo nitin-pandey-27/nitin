@@ -1,0 +1,712 @@
+#!/bin/bash
+ 
+# clear the screen
+tput clear
+ 
+# Move cursor to screen location X,Y (top left is 0,0)
+tput cup 3 15
+ 
+# Set a foreground colour using ANSI escape
+tput setaf 3
+echo "  eRecharge"
+tput sgr0
+ 
+tput cup 4 17
+# Set reverse video mode
+tput rev
+echo  "M A I N - M E N U"
+tput sgr0
+ 
+tput cup 5 15
+echo "1. Backup Existing Build"
+ 
+tput cup 6 15
+echo "2. Configure New Build"
+ 
+tput cup 7 15
+echo "3. Deploy New Build"
+
+tput cup 8 15
+echo "4. Stop Services"
+ 
+tput cup 9 15
+echo "5. Start Services"
+
+tput cup 10 15
+echo "6. Safe Restart Services"
+ 
+# Set bold mode 
+tput bold
+tput cup  12 15
+read -p "Enter your choice [1-6] " choice
+
+DATE=`date +"%d-%m-%Y-%H%M%S"`
+
+#===================TAKING BACKUP==================
+
+if [ $choice == 1 ]; then
+	tput cup  16 15
+		echo "Taking Backup Of Existing Build"
+	 tput cup  18 15
+		mkdir -p /root/BACKUP-BUILDS/"$DATE"
+		echo " mkdir -p /root/BACKUP-BUILDS/"$DATE""
+		cd /root/BACKUP-BUILDS/"$DATE"
+		mkdir core
+		mkdir restcon
+		mkdir ussd
+		mkdir reports
+	tput cup 19 15 
+		echo 
+		     "mkdir core
+		      mkdir restcon			
+		      mkdir ussd
+		      mkdir reports"
+		cp -r /opt/mms/restcon/webapps/* /root/BACKUP-BUILDS/"$DATE"/restcon/
+		cp -r /opt/mms/reports/webapps/* /root/BACKUP-BUILDS/"$DATE"/reports/
+		cp -r /opt/mms/ussd/webapps/* /root/BACKUP-BUILDS/"$DATE"/ussd/
+		cp -r /opt/mms/appserver/standalone/deployments/*.jar /root/BACKUP-BUILDS/"$DATE"/core/
+	 tput cup 23 15 
+                echo 
+	       "cp -r /opt/mms/restcon/webapps/* /root/BACKUP-BUILDS/"$DATE"/restcon/
+                cp -r /opt/mms/reports/webapps/* /root/BACKUP-BUILDS/"$DATE"/reports/
+                cp -r /opt/mms/ussd/webapps/* /root/BACKUP-BUILDS/"$DATE"/ussd/
+                cp -r /opt/mms/appserver/standalone/deployments/*.jar /root/BACKUP-BUILDS/"$DATE"/core/  
+                      "
+	tput bold
+	tput cup 28 15
+		echo "Backup Completed at location /root/BACKUP-BUILDS/"$DATE""
+fi
+
+#===================CONFIGURING NEW BUILD==================
+
+if [ $choice == 2 ]; then
+        tput cup  30 15
+                echo "Configuring New Build"
+	 tput bold
+         tput cup  31 15
+		read -p "Enter the full location of the build (please provide the location till INSTALL directory) :" buildlocation
+        tput bold 
+	tput cup 32 15
+		echo "You have provided the build path : "$buildlocation" "
+	tput bold 
+	tput cup 33 15 
+		read -p "Please confirm where are you going to deploy this build : P - PRODUCTION    S - STAGING :" environment
+		
+		#===build configuraiton for Staging
+		 if [ $environment == S ]; then
+				cd $buildlocation
+				find $buildlocation/ui/erecharge/mui/js/mui-router.js -type f -exec sed -i 's/eotar-devel.moremagic.com/86.96.242.180/g' {} \;
+
+				find $buildlocation/ui/erecharge/mui/js/service/mui-auth-srvc.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/86.96.242.180/g'  {} \;
+				find $buildlocation/ui/erecharge/mui/js/service/mui-auth-srvc.js  -type f -exec sed -i 's/localhost:8089/86.96.242.180/g'  {} \;
+
+				find $buildlocation/ui/erecharge/aui/js/service/aui-auth-srvc.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/86.96.242.180/g' {} \;
+				find $buildlocation/ui/erecharge/aui/js/service/aui-auth-srvc.js  -type f -exec sed -i 's/localhost:8089/86.96.242.180/g' {} \; 
+	
+				find $buildlocation/ui/erecharge/aui/js/aui-router.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/86.96.242.180/g' {} \;
+
+			grep -ilr "86.96.242.180" $buildlocation/ui/* >> $buildlocation/changefile
+
+		 tput cup 38 15 
+			echo "Please check the below location "$buildlocation/changefile" to confirm the configuraiton is fine :"
+		fi
+
+
+		#===build configuraiton for Produciton	
+		    if [ $environment == P ]; then
+                                cd $buildlocation
+                                find $buildlocation/ui/erecharge/mui/js/mui-router.js -type f -exec sed -i 's/eotar-devel.moremagic.com/erecharge.etisalat.ae/g' {} \;
+				find $buildlocation/ui/erecharge/mui/js/mui-router.js -type f -exec sed -i 's/86.96.242.180/erecharge.etisalat.ae/g' {} \;
+                                         
+                                find $buildlocation/ui/erecharge/mui/js/service/mui-auth-srvc.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/erecharge.etisalat.ae/g'  {} \;
+				find $buildlocation/ui/erecharge/mui/js/service/mui-auth-srvc.js  -type f -exec sed -i 's/86.96.242.180/erecharge.etisalat.ae/g'  {} \;
+				find $buildlocation/ui/erecharge/mui/js/service/mui-auth-srvc.js  -type f -exec sed -i 's/localhost:8089/erecharge.etisalat.ae/g' {} \;
+
+                                find $buildlocation/ui/erecharge/aui/js/service/aui-auth-srvc.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/erecharge.etisalat.corp.ae:2443/g' {} \;
+				find $buildlocation/ui/erecharge/aui/js/service/aui-auth-srvc.js  -type f -exec sed -i 's/86.96.242.180/erecharge.etisalat.corp.ae:2443/g' {} \;
+				find $buildlocation/ui/erecharge/aui/js/service/aui-auth-srvc.js  -type f -exec sed -i 's/localhost:8089/erecharge.etisalat.corp.ae:2443/g' {} \;	
+
+                                find $buildlocation/ui/erecharge/aui/js/aui-router.js  -type f -exec sed -i 's/eotar-devel.moremagic.com/erecharge.etisalat.corp.ae:2443/g' {} \;
+				find $buildlocation/ui/erecharge/aui/js/aui-router.js  -type f -exec sed -i 's/86.96.242.180/erecharge.etisalat.corp.ae:2443/g' {} \;
+
+                        grep -ilr "erecharge.etisalat.ae" $buildlocation/ui/* >> $buildlocation/changefile
+        		grep -ilr "erecharge.etisalat.corp.ae:2443" $buildlocation/ui/* >> $buildlocation/changefile
+
+                 tput cup 38 15 
+                        echo "Please check the below location "$buildlocation/changefile" to confirm the configuraiton is fine :"
+
+		    fi
+fi
+
+#===================DEPLOYING NEW BUILD==================
+
+if [ $choice == 3 ]; then
+        tput cup  40 15
+                echo "Deploy New Build"
+         tput cup  41 15
+		tput rev
+                echo "PLEASE MAKE SURE THAT THE SERVICES ARE NOT RUNNING BEFORE PROCEEDING TO NEXT STEP"
+		tput sgr0
+
+	 tput cup 43 15
+		tput bold
+		read -p "Please confirm whether to copy the new build to respective directories [YES/NO] :" deploy
+		if [ $deploy == YES ]; then
+			tput cup  45 15
+                		read -p "Enter the full location of the build (please provide the location till INSTALL directory) :" buildlocation
+			#	rm -rf /opt/mms/restcon/webapps/restcon /opt/mms/restcon/webapps/restcon.war /opt/mms/restcon/webapps/ui
+			#	rm -rf /opt/mms/ussd/webapps/restcon
+			# 	rm -rf /opt/mms/reports/webapps/restcon
+			#       rm -rf /opt/mms/appserver/standalone/deployments/*.jar /opt/mms/appserver/standalone/deployments/*.deployed
+			#	cp -r $buildlocation/restcon/* /opt/mms/restcon/webapps/
+			#	cp -r $buildlocation/ui/*      /opt/mms/restcon/webapps/
+			#	cp -r $buildlocation/core/*   /opt/mms/appserver/standalone/deployments/
+			#	chown -R mms:mms /opt/mms/restcon/webapps/*
+			#	chown -R mms:mms /opt/mms/appserver/standalone/deployments/*
+          tput cup 49 15
+		echo "Please goto below location - and check the current date of the build - it should be today's
+			/opt/mms/restcon/webapps/restcon
+			/opt/mms/ussd/webapps/restcon
+			/opt/mms/reports/webapps/restcon
+			/opt/mms/appserver/standalone/deployments/"
+
+		fi
+		if [ $deploy == NO ]; then
+			exit 0
+		fi
+
+
+fi
+
+#===================STOP SERVICES==================
+if [ $choice == 4 ]; then
+        tput cup  40 15
+                echo "STOP SERVICES"
+     	 tput bold
+         tput cup  41 15
+                tput rev
+                echo "PLEASE MAKE SURE THAT THE WEB SERVERS ARE NOT RUNNING BEFORE PROCESSING TO NEXT STEP"
+                tput sgr0
+	tput bold
+	tput cup 43 15 
+		read -p "Please confirm where do you want to stop the services  : P - PRODUCTION    S - STAGING:[P/S] :" environment
+	
+		#===stop services for Staging
+		 if [ $environment == S ]; then
+			tput cup 47 15
+	                echo "There are 3 services in total to be stopped - these are 
+                        service erecharge-core stop  --> Will stop the core
+                        service restcon-ussd stop    --> Will stop the ussd
+                        service restcon-reports stop --> Will stop the reports"
+			tput bold
+			tput cup 51 15
+				read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service erecharge-core stop  : Y/N :" service
+					if [ $service==Y ]; then
+						
+						 service erecharge-core stop
+						
+						status="service erecharge-core status"
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core running as PID *" ]; then	
+							tput cup 53 15
+								echo "service erecharge-core is running - $status"
+						fi 
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core not running" ]; then 
+                                                        tput cup 55 15
+                                                                echo "service erecharge-core is not running - $status"
+                                                fi 							
+					
+
+					
+					
+					else	
+							exit 0
+					fi
+		    	 tput bold	
+			 tput cup 57 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-ussd stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+                                                
+                                                 service restcon-ussd stop
+
+                                                status="service restcon-ussd status"
+                                                if [ "$(service restcon-ussd status)" = "restcon running as PID *" ]; then 
+                                                        tput cup 59 15
+                                                                echo "service reston-ussd is running - $status"
+                                                fi 
+                                                if [ "$(service restcon-ussd status)" = "restcon not running" ]; then          
+                                                        tput cup 61 15
+                                                                echo "service restcon-ussd is not running - $status"
+                                                fi 
+
+
+                                        else
+                                        
+                                                        exit 0
+                                        fi
+			   tput bold	
+                           tput cup 63 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-uis stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service restcon-uis stop
+
+                                                status="service restcon-uis status"
+                                                if [ "$(service restcon-uis status)" = "restcon running as PID *" ]; then                
+                                                        tput cup 65 15
+                                                                echo "service reston-uis is running - $status"
+                                                fi
+                                                if [ "$(service restcon-uis status)" = "restcon not running" ]; then                   
+                                                        tput cup 67 15
+                                                                echo "service restcon-uis is not running - $status"
+                                                fi
+
+
+                                        else
+						exit 0
+                                        
+                                        fi
+			  tput bold	
+			   tput cup 70 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-reports stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+                
+                                                 service restcon-reports stop
+
+                                                status="service restcon-reports status"
+                                                if [ "$(service restcon-reports status)" = "restcon running as PID *" ]; then
+                                                        tput cup 72 15
+                                                                echo "service reston-reports is running - $status"
+                                                fi
+                                                if [ "$(service restcon-reports status)" = "restcon not running" ]; then
+                                                        tput cup 73 15
+                                                                echo "service restcon-reports is not running - $status"
+                                                fi
+
+
+                                        
+                                       else
+                                                        exit 0
+                                        fi
+
+		fi	
+
+		#===stop services for Production
+	
+		if [ $environment == P ]; then
+			tput cup 47 15
+ 		tput bold
+		 tput cup 48 15
+			echo "There are 5 services in total to be stopped - these are 
+			service erecharge-core stop  --> Will stop the core
+			service restcon-ussd stop    --> Will stop the ussd
+			service restcon-reports stop --> Will stop the reports
+			service restcon-memcached stop --> Will stop the memcached
+			service haproxy stop	       --> Will stop the haproxy"
+
+					tput bold	
+					tput cup 51 15
+				read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service erecharge-core stop  : Y/N :" service
+					if [ $service==Y ]; then
+						
+						 service erecharge-core stop
+						
+						status="service erecharge-core status"
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core running as PID *" ]; then	
+							tput cup 53 15
+								echo "service erecharge-core is running - $status"
+						fi 
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core not running" ]; then 
+                                                        tput cup 55 15
+                                                                echo "service erecharge-core is not running - $status"
+                                                fi 							
+					
+
+					
+					
+					else	
+							exit 0
+					fi
+			 tput bold	
+			 tput cup 57 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-ussd stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+                                                
+                                                 service restcon-ussd stop
+
+                                                status="service restcon-ussd status"
+                                                if [ "$(service restcon-ussd status)" = "restcon running as PID *" ]; then 
+                                                        tput cup 59 15
+                                                                echo "service reston-ussd is running - $status"
+                                                fi 
+                                                if [ "$(service restcon-ussd status)" = "restcon not running" ]; then          
+                                                        tput cup 61 15
+                                                                echo "service restcon-ussd is not running - $status"
+                                                fi 
+
+
+                                        else
+                                        
+                                                        exit 0
+                                        fi
+			   tput bold
+                           tput cup 63 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-uis stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service restcon-uis stop
+
+                                                status="service restcon-uis status"
+                                                if [ "$(service restcon-uis status)" = "restcon running as PID *" ]; then                
+                                                        tput cup 65 15
+                                                                echo "service reston-uis is running - $status"
+                                                fi
+                                                if [ "$(service restcon-uis status)" = "restcon not running" ]; then                   
+                                                        tput cup 67 15
+                                                                echo "service restcon-uis is not running - $status"
+                                                fi
+
+
+                                        else
+						exit 0
+                                        
+                                        fi
+			   tput bold
+			   tput cup 70 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service restcon-reports stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+                
+                                                 service restcon-reports stop
+
+                                                status="service restcon-reports status"
+                                                if [ "$(service restcon-reports status)" = "restcon running as PID *" ]; then
+                                                        tput cup 72 15
+                                                                echo "service reston-reports is running - $status"
+                                                fi
+                                                if [ "$(service restcon-reports status)" = "restcon not running" ]; then
+                                                        tput cup 73 15
+                                                                echo "service restcon-reports is not running - $status"
+                                                fi
+
+
+                                        
+                                       else
+                                                        exit 0
+                                        fi
+			   tput bold		
+			   tput cup 74 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service memcached stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service memcached stop
+
+                                                status="service memcached status"
+                                                if [ "$(service memcached status)" = "memcached (pid  *) is running..." ]; then
+                                                        tput cup 76 15
+                                                                echo "service memcached is running - $status"
+                                                fi
+                                                if [ "$(service memcached status)" = "restcon not running" ]; then
+                                                        tput cup 78 15
+                                                                echo "service restcon-reports is not running - $status"
+                                                fi
+
+
+
+                                       else
+                                                        exit 0
+                                        fi
+			      tput bold
+			      tput cup 80 15
+                                read -p "Please confirm where do you want to stop the services after validating that its not processing any TXNS: service haproxy stop  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service haproxy stop
+
+                                                status="service haproxy status"
+                                                if [ "$(service haproxy status)" = "haproxy (pid  *) is running..." ]; then
+                                                        tput cup 82 15
+                                                                echo "service haproxy is running - $status"
+                                                fi
+                                                if [ "$(service haproxy status)" = "haproxy not running" ]; then
+                                                        tput cup 84 15
+                                                                echo "service haproxy is not running - $status"
+                                                fi
+
+
+                
+                                       else
+                                                        exit 0
+                                        fi
+
+
+		fi
+
+fi	
+
+#===================START SERVICES==================
+if [ $choice == 5 ]; then
+        tput cup  40 15
+                echo "START SERVICES"
+         tput cup  41 15
+                tput rev
+                echo "PLEASE MAKE SURE THAT THE WEB SERVERS ARE NOT RUNNING BEFORE PROCESSING TO NEXT STEP"
+                tput sgr0
+	tput bold
+	tput cup 43 15 
+		read -p "Please confirm where do you want to start the services  : P - PRODUCTION    S - STAGING:[P/S] :" environment
+	
+		#===start services for Staging
+
+			if [ $environment == S ]; then
+			tput cup 47 15
+	                echo "There are 3 services in total to be started - these are 
+                        service erecharge-core start  --> Will start the core
+                        service restcon-ussd start    --> Will start the ussd
+                        service restcon-reports start --> Will start the reports"
+				
+			tput cup 51 15
+				read -p "Please confirm where do you want to start the service : service erecharge-core start  : Y/N :" service
+					if [ $service==Y ]; then
+						
+						 service erecharge-core start
+						 sleep 100
+						status="service erecharge-core status"
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core running as PID *" ]; then	
+							tput cup 53 15
+								echo "service erecharge-core is running - $status"
+						fi 
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core not running" ]; then 
+                                                        tput cup 55 15
+                                                                echo "service erecharge-core is not running - $status"
+                                                fi 							
+					
+
+					
+					
+					else	
+							exit 0
+					fi
+
+			 tput cup 57 15
+                                read -p "Please confirm where do you want to start the services : service restcon-ussd start  : Y/N :" service
+                                        if [ $service==Y ]; then
+                                                
+                                                 service restcon-ussd start
+							sleep 60
+                                                status="service restcon-ussd status"
+                                                if [ "$(service restcon-ussd status)" = "restcon running as PID *" ]; then 
+                                                        tput cup 59 15
+                                                                echo "service reston-ussd is running - $status"
+                                                fi 
+                                                if [ "$(service restcon-ussd status)" = "restcon not running" ]; then          
+                                                        tput cup 61 15
+                                                                echo "service restcon-ussd is not running - $status"
+                                                fi 
+
+
+                                        else
+                                        
+                                                        exit 0
+                                        fi
+
+                           tput cup 63 15
+                                read -p "Please confirm where do you want to start the services : service restcon-uis start  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service restcon-uis start
+							sleep 40
+                                                status="service restcon-uis status"
+                                                if [ "$(service restcon-uis status)" = "restcon running as PID *" ]; then                
+                                                        tput cup 65 15
+                                                                echo "service reston-uis is running - $status"
+                                                fi
+                                                if [ "$(service restcon-uis status)" = "restcon not running" ]; then                   
+                                                        tput cup 67 15
+                                                                echo "service restcon-uis is not running - $status"
+                                                fi
+
+
+                                        else
+						exit 0
+                                        
+                                        fi
+			   tput cup 70 15
+                                read -p "Please confirm where do you want to start the services : service restcon-reports start  : Y/N :" service
+                                        if [ $service==Y ]; then
+                
+                                                 service restcon-reports start
+							sleep 40
+
+                                                status="service restcon-reports status"
+                                                if [ "$(service restcon-reports status)" = "restcon running as PID *" ]; then
+                                                        tput cup 72 15
+                                                                echo "service reston-reports is running - $status"
+                                                fi
+                                                if [ "$(service restcon-reports status)" = "restcon not running" ]; then
+                                                        tput cup 73 15
+                                                                echo "service restcon-reports is not running - $status"
+                                                fi
+
+
+                                        
+                                       else
+                                                        exit 0
+                                        fi
+
+		fi	
+	
+
+	#===start services for Production
+	
+		if [ $environment == P ]; then
+			tput cup 47 15
+ 
+		 tput cup 48 15
+			echo "There are 5 services in total to be started - these are 
+			service erecharge-core start  --> Will start the core
+			service restcon-ussd start    --> Will start the ussd
+			service restcon-reports start --> Will start the reports
+			service restcon-memcached start --> Will start the memcached
+			service haproxy start	       --> Will start the haproxy"
+
+
+					tput cup 51 15
+				read -p "Please confirm where do you want to start the service : service erecharge-core start  : Y/N :" service
+					if [ $service==Y ]; then
+						
+						 service erecharge-core start
+							sleep 100
+						
+						status="service erecharge-core status"
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core running as PID *" ]; then	
+							tput cup 53 15
+								echo "service erecharge-core is running - $status"
+						fi 
+						if [ "$(service erecharge-core status)" = "/etc/init.d/erecharge-core not running" ]; then 
+                                                        tput cup 55 15
+                                                                echo "service erecharge-core is not running - $status"
+                                                fi 							
+					
+
+					
+					
+					else	
+							exit 0
+					fi
+
+			 tput cup 57 15
+                                read -p "Please confirm where do you want to start the service : service restcon-ussd start  : Y/N :" service
+                                        if [ $service==Y ]; then
+                                                
+                                                 service restcon-ussd start
+							sleep 40
+
+                                                status="service restcon-ussd status"
+                                                if [ "$(service restcon-ussd status)" = "restcon running as PID *" ]; then 
+                                                        tput cup 59 15
+                                                                echo "service reston-ussd is running - $status"
+                                                fi 
+                                                if [ "$(service restcon-ussd status)" = "restcon not running" ]; then          
+                                                        tput cup 61 15
+                                                                echo "service restcon-ussd is not running - $status"
+                                                fi 
+
+
+                                        else
+                                        
+                                                        exit 0
+                                        fi
+
+                           tput cup 63 15
+                                read -p "Please confirm where do you want to start the services : service restcon-uis start  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service restcon-uis start
+							sleep 40
+
+                                                status="service restcon-uis status"
+                                                if [ "$(service restcon-uis status)" = "restcon running as PID *" ]; then                
+                                                        tput cup 65 15
+                                                                echo "service reston-uis is running - $status"
+                                                fi
+                                                if [ "$(service restcon-uis status)" = "restcon not running" ]; then                   
+                                                        tput cup 67 15
+                                                                echo "service restcon-uis is not running - $status"
+                                                fi
+
+
+                                        else
+						exit 0
+                                        
+                                        fi
+			   tput cup 70 15
+                                read -p "Please confirm where do you want to start the service : service restcon-reports start  : Y/N :" service
+                                        if [ $service==Y ]; then
+                
+                                                 service restcon-reports start
+							sleep 40
+
+                                                status="service restcon-reports status"
+                                                if [ "$(service restcon-reports status)" = "restcon running as PID *" ]; then
+                                                        tput cup 72 15
+                                                                echo "service reston-reports is running - $status"
+                                                fi
+                                                if [ "$(service restcon-reports status)" = "restcon not running" ]; then
+                                                        tput cup 73 15
+                                                                echo "service restcon-reports is not running - $status"
+                                                fi
+
+
+                                        
+                                       else
+                                                        exit 0
+                                        fi
+
+			   tput cup 74 15
+                                read -p "Please confirm where do you want to start the service : service memcached start  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service -u mms  memcached start
+
+                                                status="service memcached status"
+                                                if [ "$(service memcached status)" = "memcached (pid  *) is running..." ]; then
+                                                        tput cup 76 15
+                                                                echo "service memcached is running - $status"
+                                                fi
+                                                if [ "$(service memcached status)" = "memcached is not running" ]; then
+                                                        tput cup 78 15
+                                                                echo "service memcached is not running - $status"
+                                                fi
+
+
+
+                                       else
+                                                        exit 0
+                                        fi
+
+			      tput cup 80 15
+                                read -p "Please confirm where do you want to start the service : service haproxy start  : Y/N :" service
+                                        if [ $service==Y ]; then
+
+                                                 service haproxy start
+
+                                                status="service haproxy status"
+                                                if [ "$(service haproxy status)" = "haproxy (pid  *) is running..." ]; then
+                                                        tput cup 82 15
+                                                                echo "service haproxy is running - $status"
+                                                fi
+                                                if [ "$(service haproxy status)" = "haproxy not running" ]; then
+                                                        tput cup 84 15
+                                                                echo "service haproxy is not running - $status"
+                                                fi
+
+
+                
+                                       else
+                                                        exit 0
+                                        fi
+
+
+		fi
+
+fi	
+
