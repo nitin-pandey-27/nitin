@@ -6,7 +6,7 @@
 
 	#Date:2016-01-20
 
-	SUBJECT="CanalPlus Application Layer Report"
+	SUBJECT="Application Layer Report"
 
 	TO=nitin@
 
