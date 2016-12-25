@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#Written BY Nitin Pandey on 25th Dec 2016
+#AutoStart Oracle CRS Service After Lnux Reboot
+#RHEL7 only
+DATE=`date +"%d-%m-%Y-%H%M%S"`
+
+filename=`find /var/log -name boot.log  -mmin -2000`
+ echo "$filename"
+if [[ $filename = '/var/log/boot.log' ]];   then
+		echo "$filename"
+        filename2=`tail -n 1 $filename | awk '{print $1 $2 $3 $4 $5 $6}'`
+			echo "$filename2"
+                if [[ $filename2 = "StartingSYSV:HPSystemManagementHomepage" ]]; then
+				echo "$filename2"
+				/home/app/gridhome/product/11.2.0.4/bin/crsctl stat res -t  > /root/crsctl-$DATE
+                        sleep 5
+                        #mail -s "CRITICAL: MWPRDB01 : Kindly check the crsctl service" n.pandey@oberthur.com < /dev/null
+                else 
+		     echo "2nd else of if loop"
+                      #  mail -s "CRITICAL: MWPRDB01 : No need to start the crsctl. Kindly check." n.pandey@oberthur.com < /dev/null
+                fi
+fi
